@@ -1,24 +1,11 @@
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, request
 from sqlalchemy import exc
 from gtmd.app import db
 from gtmd.models.User import User
-import jwt
+from gtmd.tokenMethods import *
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
 
-SECRET_KEY = "CaiXukun"
-algorithm = "HS256"
-
-
-def jwtEncoding(jsonstring):
-    return jwt.encode(jsonstring, key=SECRET_KEY, algorithm=algorithm)
-
-
-def jwtDecoding(token):
-    try:
-        return jsonify(jwt.decode(token, key=SECRET_KEY, algorithm=algorithm))
-    except jwt.DecodeError:
-        return None
 
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
