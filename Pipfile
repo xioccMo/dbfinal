@@ -1,0 +1,22 @@
+[[source]]
+name = "pypi"
+url = "https://mirrors.aliyun.com/pypi/simple/"
+verify_ssl = true
+
+[dev-packages]
+
+[packages]
+simplejson = "*"
+lxml = "*"
+codecov = "*"
+coverage = "*"
+flask = "*"
+pre-commit = "*"
+pytest = "*"
+pyjwt = "*"
+requests = "*"
+flask-sqlalchemy = "*"
+pymysql = "*"
+
+[requires]
+python_version = "3.7"
