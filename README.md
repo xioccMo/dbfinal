@@ -1,7 +1,7 @@
 # gtmdDatabase
 
 ##### 第三次更新
-更新时间：2019年12月17日 22:55:54
+更新时间：2019年12月17日 22:55:54  
 测试已完成情况：
 - [x] test_add_book.py	 
 - [x] test_add_funds.py	
