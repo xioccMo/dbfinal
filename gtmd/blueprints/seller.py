@@ -11,6 +11,13 @@ seller_bp = Blueprint("seller", __name__, url_prefix="/seller")
 
 @seller_bp.route("/create_store", methods=["GET", "POST"])
 def create_store():
+    """
+    Response
+    Status Code || Message || Judging Condition:
+    401（自创）创建失败，用户名或token错误  token解析返回值为空（即token解析错误）或token解析成json格式后user_id对应的值与selle_id不符
+    501 商铺ID已存在 商铺store_id属性为主键不能重复，通过捕捉exc.IntegrityError判断
+    200 成功
+    """
     token = jwtDecoding(request.headers.get("token"))
     store_id = request.json.get("store_id")
     seller_id = request.json.get("user_id")
@@ -22,26 +29,38 @@ def create_store():
         db.session.commit()
         return jsonify(({"message": "创建商铺成功"})), 200
     except exc.IntegrityError:
-        return jsonify({"message": "商铺ID已存在"}), 401
+        return jsonify({"message": "商铺ID已存在"}), 501
 
 
 @seller_bp.route("/add_book", methods=["GET", "POST"])
 def add_book():
+    """
+    Response
+    Status Code || Message || Judging Condition:
+    501 卖家用户ID不存在 查询User表中属性user_id为seller_id的元组，若返回值为空，则该卖家用户不存在
+    502（自创） 添加失败，用户名或token错误 token解析返回值为空（即token解析错误）或token解析成json格式后user_id对应的值与seller_id不符
+    503 商铺ID不存在 查询Store表中属性store_id为store_id的元组，若返回值为空，则该商铺ID不存在不存在
+    504 图书ID已存在 每个书店中只能有唯一book_id的书籍，且考虑到主键问题咱（SqlAlchemy初试化每个表必须要有一个主键），对属性值book_id的构建为store_id + book_id构成，由于主键不能重复，通过捕捉exc.IntegrityError异常判断即可
+    200 ok
+    Attention:
+    这里tags是用空格作为分隔符存储为字符串保存的
+    这里Blob是用mediumblob类型，存储方法在Book.py里面有两种方法说明
+    """
     token = jwtDecoding(request.headers.get("token"))
     seller_id = request.json.get("user_id")
     store_id = request.json.get("store_id")
     book_info = request.json.get("book_info")
     stock_level = request.json.get("stock_level")
-    if token is None or token.json.get("user_id") != seller_id:
+    user = User.query.filter_by(user_id=seller_id).first()
+    if user is None:
         return jsonify({"message": "卖家用户ID不存在"}), 501
+    if token is None or token.json.get("user_id") != seller_id:
+        return jsonify({"message": "添加失败，用户名或token错误"}), 502
     store = Store.query.filter_by(seller_id=seller_id, store_id=store_id).first()
     if store is None:
-        return jsonify({"message": "商铺ID不存在"}), 502
-    book = Book.query.filter_by(store_id=store_id, book_id=book_info['id']).first()
-    if book is not None:
-        return jsonify({"message": "图书ID已存在"}), 503
+        return jsonify({"message": "商铺ID不存在"}), 503
     book = Book(
-        book_id=book_info["id"],
+        book_id=store_id + book_info["id"],
         store_id=store_id,
         title=book_info["title"],
         author=book_info["author"],
@@ -61,25 +80,40 @@ def add_book():
         stock_level=stock_level
     )
     db.session.add(book)
-    db.session.commit()
-    return jsonify({"message": "ok"}), 200
+    try:
+        db.session.commit()
+        return jsonify({"message": "ok"}), 200
+    except exc.IntegrityError:
+        return jsonify({"message": "图书ID已存在"}), 504
 
 
 @seller_bp.route("add_stock_level", methods=["GET", "POST"])
 def update_stock_level():
+    """
+    Response
+    Status Code || Message || Judging Condition:
+    501 卖家用户ID不存在 查询User表中属性user_id为seller_id的元组，若返回值为空，则该卖家用户不存在
+    502（自创） 添加失败，用户名或token错误 token解析返回值为空（即token解析错误）或token解析成json格式后user_id对应的值与seller_id不符
+    503 商铺ID不存在 查询Store表中属性store_id为store_id的元组，若返回值为空，则该商铺ID不存在不存在
+    504 图书ID不存在 查询Book表中属性book_id为book_id的元组，若返回值为空，则该书籍ID不存在不存在
+    200 ok
+    """
     token = jwtDecoding(request.headers.get("token"))
     seller_id = request.json.get("user_id")
     store_id = request.json.get("store_id")
     book_id = request.json.get("book_id")
     add_stock_level = request.json.get("add_stock_level")
-    if token is None or token.json.get("user_id") != seller_id:
+    user = User.query.filter_by(user_id=seller_id).first()
+    if user is None:
         return jsonify({"message": "卖家用户ID不存在"}), 501
+    if token is None or token.json.get("user_id") != seller_id:
+        return jsonify({"message": "添加失败，用户名或token错误"}), 502
     store = Store.query.filter_by(seller_id=seller_id, store_id=store_id).first()
     if store is None:
-        return jsonify({"message": "商铺ID不存在"}), 501
-    book = Book.query.filter_by(store_id=store_id, book_id=book_id).first()
+        return jsonify({"message": "商铺ID不存在"}), 503
+    book = Book.query.filter_by(store_id=store_id, book_id=store_id+book_id).first()
     if book is None:
-        return jsonify({"message": "图书ID不存在"}), 502
+        return jsonify({"message": "图书ID不存在"}), 504
     book.stock_level += add_stock_level
     db.session.commit()
     return jsonify({"message": "ok"}), 200

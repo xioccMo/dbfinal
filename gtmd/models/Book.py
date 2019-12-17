@@ -2,11 +2,10 @@ from gtmd.app import db
 
 
 class Book(db.Model):
-    id = db.Column(db.INTEGER, primary_key=True, unique=True, index=True, nullable=False, autoincrement=True)
+    # 书籍的id
+    book_id = db.Column(db.String, primary_key=True, index=True, unique=True)
     # 店铺id
     store_id = db.Column(db.String, index=True)
-    # 书籍的id
-    book_id = db.Column(db.String, index=True, unique=True)
     # 书籍标题
     title = db.Column(db.String, nullable=False)
     # 书籍作者
