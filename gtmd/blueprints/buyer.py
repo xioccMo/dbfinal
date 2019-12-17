@@ -85,6 +85,7 @@ def payment():
     if total > user.value:
         return jsonify({"message": "账户余额不足"}), 502
     user.value -= total
+    order.status = "paid"
     db.session.commit()
     return jsonify({"message": "ok"}), 200
 
