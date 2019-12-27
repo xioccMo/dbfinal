@@ -36,8 +36,6 @@ def monitor():
     # 创建DBSession类型:
     DBSession = sessionmaker(bind=engine)
 
-    # while True:
-
     while True:
         session = DBSession()
         pendingOrder = session.query(PendingOrder).order_by(PendingOrder.id).first()

@@ -59,8 +59,8 @@ class TestTrackOrder:
 
     def test_error_user_id(self):
         code = track_order(self.buyer_id + "_x", self.buyer_password)
-        assert code == 200
+        assert code != 200
 
     def test_error_password(self):
         code = track_order(self.buyer_id, self.buyer_password + "_x")
-        assert code == 200
+        assert code != 200
