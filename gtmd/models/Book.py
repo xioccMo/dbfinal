@@ -38,5 +38,8 @@ class Book(db.Model):
     # 注意这里的BLOB有两种方法， 一个是用db.TEXT
     # 另一是用json.dumps(string).encode('utf-8')
     pictures = db.Column(db.BLOB)
+    # 书籍销量
+    sales = db.Column(db.Integer, nullable=False, default=0)
     # 书籍库存
-    stock_level = db.Column(db.INTEGER)
+    stock_level = db.Column(db.INTEGER, nullable=False, default=0)
+

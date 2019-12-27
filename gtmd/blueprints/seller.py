@@ -2,6 +2,8 @@ from flask import Blueprint, request
 from sqlalchemy import exc
 from gtmd.app import db
 from gtmd.models.Book import Book
+from gtmd.models.Order import Order
+from gtmd.models.Orderdetail import Orderdetail
 from gtmd.models.Store import Store
 from gtmd.models.User import User
 from gtmd.tokenMethods import *
@@ -60,7 +62,8 @@ def add_book():
     if store is None:
         return jsonify({"message": "商铺ID不存在"}), 503
     book = Book(
-        book_id=store_id + book_info["id"],
+        # 这里做一点冗余处理，主要实现不同店铺可以加相同id的商品，而同一个店铺不行，否则测试过不了
+        book_id=store_id + "|" + book_info["id"],
         store_id=store_id,
         title=book_info["title"],
         author=book_info["author"],
@@ -111,10 +114,34 @@ def update_stock_level():
     store = Store.query.filter_by(seller_id=seller_id, store_id=store_id).first()
     if store is None:
         return jsonify({"message": "商铺ID不存在"}), 503
-    book = Book.query.filter_by(store_id=store_id, book_id=store_id+book_id).first()
+    book = Book.query.filter_by(store_id=store_id, book_id=store_id + "|" + book_id).first()
     if book is None:
         return jsonify({"message": "图书ID不存在"}), 504
     book.stock_level += add_stock_level
     db.session.commit()
     return jsonify({"message": "ok"}), 200
 
+
+@seller_bp.route("change_unreceived", methods=["POST"])
+def change_unreceived():
+    # 这里是按照淘宝的设计，只针对单个订单进行发货处理
+    token = jwtDecoding(request.headers.get("token"))
+    seller_id = request.json.get("user_id")
+    store_id = request.json.get("store_id")
+    order_id = request.json.get("order_id")
+    user = User.query.filter_by(user_id=seller_id).first()
+    if user is None:
+        return jsonify({"message": "卖家用户ID不存在"}), 501
+    if token is None or token.json.get("user_id") != seller_id:
+        return jsonify({"message": "添加失败，用户名或token错误"}), 502
+    store = Store.query.filter_by(seller_id=seller_id, store_id=store_id).first()
+    if store is None:
+        return jsonify({"message": "商铺ID不存在"}), 503
+    order = Order.query.filter_by(order_id=order_id, store_id=store_id).first()
+    if order is None:
+        return jsonify({"message": "订单查询失败"}), 504
+    if order.status != "paid":
+        return jsonify({"message": "该订单物品状态不是待发货状态，无法切换为发货状态"}), 506
+    order.status = "unreceived"
+    db.session.commit()
+    return jsonify({"message": "ok"}), 200

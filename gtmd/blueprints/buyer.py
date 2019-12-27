@@ -1,13 +1,18 @@
+import datetime
+import uuid
+from operator import and_
+
 from flask import Blueprint, request
-from sqlalchemy import exc
+
 from gtmd.app import db
 from gtmd.models.Book import Book
 from gtmd.models.Order import Order
 from gtmd.models.Orderdetail import Orderdetail
 from gtmd.models.Store import Store
 from gtmd.models.User import User
+from gtmd.models.PendingOrder import Pendingorder
 from gtmd.tokenMethods import *
-import uuid
+
 buyer_bp = Blueprint("buyer", __name__, url_prefix="/buyer")
 
 
@@ -39,13 +44,13 @@ def new_order():
     if store is None:
         return jsonify({"message": "商铺ID不存在"}), 503
     order_id = str(uuid.uuid1())
-    order = Order(order_id=order_id, store_id=store_id, buyer_id=buyer_id, status="unpay")
+    order = Order(order_id=order_id, store_id=store_id, buyer_id=buyer_id, status="unpaid")
     db.session.add(order)
     db.session.commit()
     for item in request.json.get("books"):
         book_id = item["id"]
         count = item["count"]
-        book = Book.query.filter_by(book_id=store_id+book_id).first()
+        book = Book.query.filter_by(book_id=store_id + "|" + book_id).first()
         if book is None or book.stock_level < count:
             db.session.rollback()
             Order.query.filter_by(order_id=order_id).delete()
@@ -55,8 +60,11 @@ def new_order():
             elif book.stock_level < count:
                 return jsonify({"message": "商品库存不足"}), 505
         book.stock_level -= count
-        order = Orderdetail(id=str(uuid.uuid1()), order_id=order_id, book_id=store_id+book_id, count=count, price=book.price)
-        db.session.add(order)
+        orderdetail = Orderdetail(orderdetail_id=str(uuid.uuid1()), order_id=order_id, book_id=store_id + "|" + book_id,
+                                  count=count, price=book.price)
+        db.session.add(orderdetail)
+    pendingorder = Pendingorder(order_id=order_id)
+    db.session.add(pendingorder)
     db.session.commit()
     return jsonify({"order_id": order_id}), 200
 
@@ -80,10 +88,16 @@ def payment():
     order = Order.query.filter_by(order_id=order_id).first()
     if order is None:
         return jsonify({"message": "无效参数"}), 501
-    orderitems = Orderdetail.query.filter_by(order_id=order_id).all()
-    total = sum([orderitem.price * orderitem.count for orderitem in orderitems])
+    elif order.status != "unpaid" or (datetime.datetime.now() - order.createtime).total_seconds() >= 10:
+        return jsonify({"message": "当前订单状态无法支付"}), 502
+    orderdetails = Orderdetail.query.filter_by(order_id=order_id).all()
+    total = 0
+    for orderdetail in orderdetails:
+        total += orderdetail.price * orderdetail.count
+    # 这里需要修改说明
     if total > user.value:
-        return jsonify({"message": "账户余额不足"}), 502
+        db.session.rollback()
+        return jsonify({"message": "账户余额不足"}), 503
     user.value -= total
     order.status = "paid"
     db.session.commit()
@@ -111,3 +125,161 @@ def add_funds():
     db.session.commit()
     return jsonify({"message": "ok"}), 200
 
+
+@buyer_bp.route("/change_received", methods=["GET", "POST"])
+def change_received():
+    token = jwtDecoding(request.headers.get("token"))
+    buyer_id = request.json.get("user_id")
+    order_id = request.json.get("order_id")
+    user = User.query.filter_by(user_id=buyer_id).first()
+    if user is None:
+        return jsonify({"message": "买家用户ID不存在"}), 501
+    if token is None or buyer_id != token.json.get("user_id"):
+        return jsonify({"message": "用户名或token错误"}), 502
+    order = Order.query.filter_by(buyer_id=buyer_id, order_id=order_id).first()
+    if order is None:
+        return jsonify({"message": "当前用户没有该订单或订单不存在"}), 503
+    elif order.status != "unreceived":
+        return jsonify({"message": "当前订单物品状态不为待发货，无法切换为收货状态"}), 504
+    order.status = "received"
+    db.session.commit()
+    return jsonify({"message": "ok"}), 200
+
+
+@buyer_bp.route("/cancel_order", methods=["POST"])
+def cancel_order():
+    token = jwtDecoding(request.headers.get("token"))
+    buyer_id = request.json.get("user_id")
+    order_id = request.json.get("order_id")
+    user = User.query.filter_by(user_id=buyer_id).first()
+    if user is None:
+        return jsonify({"message": "买家用户不存在"}), 501
+    if token is None or buyer_id != token.json.get("user_id"):
+        return jsonify({"message": "用户名或token错误"}), 502
+    order = Order.query.filter_by(buyer_id=buyer_id, order_id=order_id).first()
+    if order is None:
+        return jsonify({"message": "当前用户没有该订单或订单不存在"}), 503
+    elif order.status != "unpaid" and order.status != "paid":
+        return jsonify({"message": "当前订单无法取消"}), 504
+    orderdetails = Orderdetail.query.filter_by(order_id=order_id).all()
+    for orderdetail in orderdetails:
+        book = Book.query.filter_by(book_id=orderdetail.book_id).first()
+        book.stock_level += orderdetail.count
+        if order.status == "paid":
+            user.value += orderdetail.count * orderdetail.price
+    order.status = "canceled"
+    db.session.commit()
+    return jsonify({"message": "取消订单成功"}), 200
+
+
+@buyer_bp.route("/track_order_by_order_id", methods=["POST"])
+def track_order_by_order_id():
+    token = jwtDecoding(request.headers.get("token"))
+    buyer_id = request.json.get("user_id")
+    order_id = request.json.get("order_id")
+    user = User.query.filter_by(user_id=buyer_id).first()
+    if user is None:
+        return jsonify({"message": "买家用户不存在"}), 501
+    if token is None or buyer_id != token.json.get("user_id"):
+        return jsonify({"message": "用户名或token错误"}), 502
+    order = Order.query.filter_by(buyer_id=buyer_id, order_id=order_id).first()
+    if order is None:
+        return jsonify({"message": "当前用户没有该订单或订单不存在"}), 503
+    order_info = {
+        "order_id": order_id,
+        "createtime": order.createtime,
+        "store_id": order.store_id,
+        "orderdetail": []
+    }
+    items = Orderdetail.query.filter_by(order_id=order_id).all()
+    total = 0
+    for item in items:
+        order_info["orderdetail"].append(
+            {
+                "book_id": item.book_id,
+                "book_title": item.book_info.title,
+                "book_author": item.book_info.author,
+                "count": item.count,
+                "unit_price": item.price,
+            }
+        )
+        total += item.count * item.price
+    order_info["total_price"] = total
+    order_info["message"] = "ok"
+    return jsonify(order_info), 200
+
+
+@buyer_bp.route("/track_order", methods=["POST"])
+def track_order():
+    token = jwtDecoding(request.headers.get("token"))
+    buyer_id = request.json.get("user_id")
+    user = User.query.filter_by(user_id=buyer_id).first()
+    if user is None:
+        return jsonify({"message": "买家用户不存在"}), 501
+    if token is None or buyer_id != token.json.get("user_id"):
+        return jsonify({"message": "用户名或token错误"}), 502
+    unaccomplishdorders = Order.query.filter(Order.buyer_id == buyer_id,
+                                             ~Order.status.in_(["canceled", "received"])).order_by(
+        Order.createtime.desc()).all()
+    accomplishorders = Order.query.filter(Order.buyer_id == buyer_id,
+                                          Order.status.in_(["canceled", "received"])).order_by(
+        Order.createtime.desc()).all()
+
+    json = {"message": "ok", "order": []}
+    for order in unaccomplishdorders + accomplishorders:
+        order_info = {
+            "order_id": order.order_id,
+            "createtime": order.createtime,
+            "store_id": order.store_id,
+            "status": order.status,
+            "orderdetail": []
+        }
+        total = 0
+        for orderdetail in order.orderdetail:
+            order_info["orderdetail"].append(
+                {
+                    "book_id": orderdetail.book_id,
+                    "book_title": orderdetail.book_info.title,
+                    "count": orderdetail.count,
+                    "unit_price": orderdetail.price
+                }
+            )
+            total += orderdetail.count * orderdetail.price
+        order_info["total_price"] = total
+        json["order"].append(order_info)
+    return jsonify(json), 200
+
+
+@buyer_bp.route("/add_comment", methods=["GET"])
+def add_comment():
+    token = jwtDecoding(request.headers.get("token"))
+    buyer_id = request.json.get("user_id")
+    store_id = request.json.get("store_id")
+    book_id = request.json.get("book_id")
+
+    order_id = request.json.get("order_id")
+    orderdetail_id = request.json.get("orderdetail_id")
+    star = request.json.get("star")
+    comment = request.json.get("comment")
+
+    if star == "" or comment == "":
+        return jsonify({"message": "评分或评论为空"}), 506
+    user = User.query.filter_by(user_id=buyer_id).first()
+    if user is None:
+        return jsonify({"message": "买家用户ID不存在"}), 501
+    if token is None or buyer_id != token.json.get("user_id"):
+        return jsonify({"message": "用户名或token错误"}), 502
+    order = Order.query.filter_by(buyer_id=buyer_id, order_id=order_id).first()
+    if order is None:
+        return jsonify({"message": "当前用户没有该订单或订单不存在"}), 503
+    if order.status != "received":
+        return jsonify({"message": "当前书籍未收货，无法评论对该书籍进行评论"})
+    orderdetail = Orderdetail.query.filter_by(orderdetail_id=store_id + book_id).first()
+    if orderdetail is None:
+        return jsonify({"message": "订单号错误或该商品不存在"}), 504
+    if orderdetail.star != 0 or orderdetail.comment != "":
+        return jsonify({"message": "当前商品已经给过评价"}), 505
+    orderdetail.star = star
+    orderdetail.comment = comment
+    db.session.commit()
+    return jsonify({"message": "ok"}), 200

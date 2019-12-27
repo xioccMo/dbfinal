@@ -1,9 +1,18 @@
 <component name="ProjectDictionaryState">
   <dictionary name="mo">
     <words>
+      <w>accomplishorders</w>
+      <w>createtime</w>
+      <w>gtmddatabase</w>
       <w>orderdetail</w>
+      <w>orderdetails</w>
       <w>orderitem</w>
+      <w>pendingorder</w>
+      <w>tablename</w>
+      <w>unaccomplishdorder</w>
+      <w>unaccomplishdorders</w>
       <w>unpay</w>
+      <w>xukun</w>
     </words>
   </dictionary>
 </component>

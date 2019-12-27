@@ -1,5 +1,5 @@
 from gtmd.app import db
-
+import datetime
 
 class Order(db.Model):
     # 订单id
@@ -8,5 +8,9 @@ class Order(db.Model):
     buyer_id = db.Column(db.String, index=True, nullable=False)
     # 商店id
     store_id = db.Column(db.String, index=True, nullable=False)
-    # 订单status
-    status = db.Column(db.String, nullable=False, default="unpay")
+    # 创建时间
+    createtime = db.Column(db.DATETIME, default=datetime.datetime.now, nullable=False)
+    # 订单状态
+    status = db.Column(db.String, nullable=False)
+
+    orderdetail = db.relationship("Orderdetail", backref="orderdetail")
