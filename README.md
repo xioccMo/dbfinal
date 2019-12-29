@@ -45,15 +45,17 @@
 │  Pipfile
 │  Pipfile.lock
 │  README.md
-│  readmeXm.md
-│  readori.md
+│  READMEoriginal.md
+│  READMExm.md
 │  requirements.txt
+│  schema.png
+│
 ├─fe
 │  │  conf.py
 │  │  conftest.py
 │  │  __init__.py
 │  │
-│  ├─access   功能实现
+│  ├─access
 │  │  │  auth.py
 │  │  │  book.py
 │  │  │  buyer.py
@@ -61,45 +63,51 @@
 │  │  │  new_function.py
 │  │  │  new_seller.py
 │  │  │  seller.py
-│  │  │  __init__.py
+│  │  └─ __init__.py
 │  │
-│  ├─bench   添加性能测试
+│  ├─bench
 │  │  │  bench.md
 │  │  │  run.py
 │  │  │  session.py
 │  │  │  workload.py
-│  │  │  __init__.py
-│  │
-│  ├─data   数据库
+│  │  └─ __init__.py
+│  │  
+│  ├─data
 │  │      book.db
 │  │      scraper.log
 │  │      scraper.py
 │  │
-│  ├─test  添加测试功能
-│  │  │  gen_book_data.py
-│  │  │  test.md
-│  │  │  test_add_book.py
-│  │  │  test_add_funds.py
-│  │  │  test_add_stock_level.py
-│  │  │  test_auto_cancel.py
-│  │  │  test_bench.py
-│  │  │  test_cancel_order.py
-│  │  │  test_change_received.py
-│  │  │  test_change_unreceived.py
-│  │  │  test_create_store.py
-│  │  │  test_login.py  
-│  │  │  test_new_order.py
-│  │  │  test_password.py
-│  │  │  test_payment.py
-│  │  │  test_register.py
-│  │  │  test_track_order.py
-│  │  │  test_track_order_by_order_id.py
-│  │  │  __init__.py
+│  ├─doc
+│  │      auth.md
+│  │      buyer.md
+│  │      seller.md
+│  │
+│  ├─test
+│  │  gen_book_data.py
+│  │  test.md
+│  │  test_add_book.py
+│  │  test_add_funds.py
+│  │  test_add_stock_level.py
+│  │  test_auto_cancel.py
+│  │  test_bench.py
+│  │  test_cancel_order.py
+│  │  test_change_received.py
+│  │  test_change_unreceived.py
+│  │  test_create_store.py
+│  │  test_login.py
+│  │  test_new_order.py
+│  │  test_password.py
+│  │  test_payment.py
+│  │  test_register.py
+│  │  test_search_book_site.py
+│  │  test_search_book_store.py
+│  │  test_track_order.py
+│  │  test_track_order_by_order_id.py
+│  └─ __init__.py
 │
 └─gtmd
     │  app.py
     │  config.py
-    │  db.py
     │  monitor.py
     │  tokenMethods.py
     │  __init__.py
@@ -109,18 +117,17 @@
     │  │  buyer.py
     │  │  seller.py
     │  │  shutdown.py
-    │  │  __init__.py
+    │  └─ __init__.py
     │  
-    │
-    ├─models
-    │  │  Book.py
-    │  │  Order.py
-    │  │  Orderdetail.py
-    │  │  PendingOrder.py
-    │  │  Store.py
-    │  │  User.py
-    │  │  __init__.py
- ```   
+    └─models
+       │  Book.py
+       │  Order.py
+       │  Orderdetail.py
+       │  PendingOrder.py
+       │  Store.py
+       │  User.py
+       └─ __init__.py      
+```   
  
  
 #### 文件逻辑
