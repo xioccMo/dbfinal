@@ -1,6 +1,7 @@
 from gtmd.app import db
 import datetime
 
+
 class Order(db.Model):
     # 订单id
     order_id = db.Column(db.String, primary_key=True, index=True, nullable=False)

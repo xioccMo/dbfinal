@@ -42,4 +42,3 @@ class Book(db.Model):
     sales = db.Column(db.Integer, nullable=False, default=0)
     # 书籍库存
     stock_level = db.Column(db.INTEGER, nullable=False, default=0)
-

@@ -1,16 +1,21 @@
+import base64
 import datetime
+import random
 import uuid
-from operator import and_
 
+import pymysql
+import sqlalchemy
 from flask import Blueprint, request
+from sqlalchemy import text, MetaData, Table
 
 from gtmd.app import db
+from gtmd.config import SQLALCHEMY_DATABASE_URI
 from gtmd.models.Book import Book
 from gtmd.models.Order import Order
 from gtmd.models.Orderdetail import Orderdetail
+from gtmd.models.PendingOrder import Pendingorder
 from gtmd.models.Store import Store
 from gtmd.models.User import User
-from gtmd.models.PendingOrder import Pendingorder
 from gtmd.tokenMethods import *
 
 buyer_bp = Blueprint("buyer", __name__, url_prefix="/buyer")
@@ -32,9 +37,9 @@ def new_order():
     2、由于外键限制，在创建订单详细的元祖之前，得先在表Order中创建属性order_id为order_id的订单项
     3、当遇到503和504错误，得先用session.rollback进行回滚，再删除之前创建的订单项然后返回
     """
-    token = jwtDecoding(request.headers.get("token"))
+    token = jwtDecoding(request.headers.get("token"))  # token: 标记
     buyer_id = request.json.get("user_id")
-    user = User.query.filter_by(user_id=buyer_id).first()
+    user = User.query.filter_by(user_id=buyer_id).first()  # FIRST() 函数返回指定的列中第一个记录的值 user_id
     if user is None:
         return jsonify({"message": "买家用户ID不存在"}), 501
     if token is None or buyer_id != token.json.get("user_id"):
@@ -250,7 +255,7 @@ def track_order():
     return jsonify(json), 200
 
 
-@buyer_bp.route("/add_comment", methods=["GET"])
+@buyer_bp.route("/add_comment", methods=["POST"])
 def add_comment():
     token = jwtDecoding(request.headers.get("token"))
     buyer_id = request.json.get("user_id")
@@ -283,3 +288,102 @@ def add_comment():
     orderdetail.comment = comment
     db.session.commit()
     return jsonify({"message": "ok"}), 200
+
+
+@buyer_bp.route("/search_book_store", methods=["POST"])
+def search_book_store():
+    token = jwtDecoding(request.headers.get("token"))
+    buyer_id = request.json.get("user_id")
+    store_id = request.json.get("store_id")
+    key_word = request.json.get("key_word")
+    user = User.query.filter_by(user_id=buyer_id).first()
+
+    if user is None:
+        return jsonify({"message": "买家用户不存在"}), 501
+    if token is None or buyer_id != token.json.get("user_id"):
+        return jsonify({"message": "用户名或token错误"}), 502
+
+    json = {
+        "search_book_result": []
+    }
+    book_list = {}
+    engine = db.create_engine(SQLALCHEMY_DATABASE_URI)
+    conn = engine.connect()
+    try:
+        conn.execute("CREATE FULLTEXT INDEX "
+                     "fulltext_index ON book(title,book_intro) with parser ngram;")
+    except sqlalchemy.exc.InternalError:
+        pass
+    finally:
+        sql = text("SELECT * FROM book "
+                   "WHERE MATCH (title,book_intro) AGAINST ('%s' IN NATURAL LANGUAGE MODE)"
+                   "AND store_id='%s';" % (key_word, store_id))
+        cursor = conn.execute(sql)
+        for row in cursor:
+            book_list["book_id"] = row[0]
+            book_list["store_id"] = row[1]
+            book_list["title"] = row[2]
+            book_list["author"] = row[3]
+            book_list["publisher"] = row[4]
+            book_list["original_title"] = row[5]
+            book_list["translator"] = row[6]
+            book_list["pub_year"] = row[7]
+            book_list["pages"] = row[8]
+            book_list["price"] = row[9]
+            book_list["binding"] = row[10]
+            book_list["isbn"] = row[11]
+            book_list["author_intro"] = row[12]
+            book_list["book_intro"] = row[13]
+            book_list["content"] = row[14]
+            book_list["tags"] = row[15]
+            book_list["picture"] = row[16]
+            json["search_book_result"].append(book_list)
+    return jsonify(json), 200
+
+
+@buyer_bp.route("/search_book_site", methods=["POST"])
+def search_book_site():
+    token = jwtDecoding(request.headers.get("token"))
+    buyer_id = request.json.get("user_id")
+    key_word = request.json.get("key_word")
+    user = User.query.filter_by(user_id=buyer_id).first()
+
+    if user is None:
+        return jsonify({"message": "买家用户不存在"}), 501
+    if token is None or buyer_id != token.json.get("user_id"):
+        return jsonify({"message": "用户名或token错误"}), 502
+
+    json = {
+        "search_book_result": []
+    }
+    book_list = {}
+    engine = db.create_engine(SQLALCHEMY_DATABASE_URI)
+    conn = engine.connect()
+    try:
+        conn.execute("CREATE FULLTEXT INDEX "
+                     "fulltext_index ON book(title,book_intro) with parser ngram;")
+    except sqlalchemy.exc.InternalError:
+        pass
+    finally:
+        sql = text("SELECT * FROM book WHERE MATCH (title,book_intro) AGAINST ('%s' IN NATURAL LANGUAGE MODE);" % key_word)
+        cursor = conn.execute(sql)
+        for row in cursor:
+            book_list["book_id"] = row[0]
+            book_list["store_id"] = row[1]
+            book_list["title"] = row[2]
+            book_list["author"] = row[3]
+            book_list["publisher"] = row[4]
+            book_list["original_title"] = row[5]
+            book_list["translator"] = row[6]
+            book_list["pub_year"] = row[7]
+            book_list["pages"] = row[8]
+            book_list["price"] = row[9]
+            book_list["binding"] = row[10]
+            book_list["isbn"] = row[11]
+            book_list["author_intro"] = row[12]
+            book_list["book_intro"] = row[13]
+            book_list["content"] = row[14]
+            book_list["tags"] = row[15]
+            book_list["picture"] = row[16]
+            json["search_book_result"].append(book_list)
+    return jsonify(json), 200

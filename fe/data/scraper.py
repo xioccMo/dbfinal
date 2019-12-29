@@ -112,6 +112,7 @@ class Scraper:
                 no = no + 20
         return True
 
+    # 创建表
     def create_tables(self):
         conn = sqlite3.connect(self.database)
         try:
@@ -224,7 +225,7 @@ class Scraper:
     def crow_book_info(self, book_id) -> bool:
         conn = sqlite3.connect(self.database)
         for _ in conn.execute("SELECT id from book where id = ('{}')".format(book_id)):
-            return
+            return False
 
         url = "https://book.douban.com/subject/{}/".format(book_id)
         r = requests.get(url, headers=get_user_agent())

@@ -7,6 +7,7 @@ from sqlalchemy.ext.declarative import declarative_base
 # 创建对象的基类:
 Base = declarative_base()
 
+
 class Order(Base):
     __tablename__ = "order"
     order_id = Column(String, primary_key=True, index=True, nullable=False)
@@ -31,7 +32,7 @@ class PendingOrder(Base):
 
 
 def monitor():
-    engine = create_engine('mysql+mysqlconnector://root:AICaiXukun@localhost:3306/gtmddatabase')
+    engine = create_engine('mysql+mysqlconnector://root:123456@localhost:3306/gtmddatabase')
 
     # 创建DBSession类型:
     DBSession = sessionmaker(bind=engine)

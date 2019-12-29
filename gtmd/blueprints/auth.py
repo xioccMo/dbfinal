@@ -5,8 +5,9 @@ from gtmd.models.User import User
 from gtmd.tokenMethods import *
 
 auth_bp = Blueprint('auth', __name__, url_prefix='/auth')
+# 用户权限接口
 
-
+# 登录
 @auth_bp.route('/login', methods=['GET', 'POST'])
 def login():
     """
@@ -34,7 +35,7 @@ def login():
     )
     return jsonify({"message": "ok", "token": token}), 200
 
-
+# 注册
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
     """
@@ -53,7 +54,7 @@ def register():
         return jsonify({{'message': '注册失败，用户名重复'}}), 501
     return jsonify({'message': 'ok'}), 200
 
-
+# 注销
 @auth_bp.route('/unregister', methods=['GET', 'POST'])
 def unregister():
     """
@@ -72,7 +73,7 @@ def unregister():
         return jsonify({"message": "注销失败，用户名不存在或密码不正确"}), 401
     return jsonify({"message":"ok"})
 
-
+# 修改密码
 @auth_bp.route('/password', methods=['GET', 'POST'])
 def password():
     """
@@ -91,7 +92,7 @@ def password():
     db.session.commit()
     return jsonify({"message": "ok"}), 200
 
-
+# 登出
 @auth_bp.route('/logout', methods=['GET', 'POST'])
 def logout():
     """
