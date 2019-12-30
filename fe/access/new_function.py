@@ -61,7 +61,6 @@ def track_order_by_order_id(buyer_id, password, order_id):
     return r.status_code, r.json().get("orderdetail")
 
 
-
 # 追踪订单
 def track_order(buyer_id, password):
     json = {
@@ -74,7 +73,6 @@ def track_order(buyer_id, password):
     headers = {"token": token}
     r = requests.post(url, headers=headers, json=json)
     return r.status_code
-
 
 
 def search_book_store(buyer_id, password, store_id, key_word):
@@ -92,6 +90,7 @@ def search_book_store(buyer_id, password, store_id, key_word):
     r = requests.post(url, headers=headers, json=json)
     return r.status_code
 
+
 def add_comment(buyer_id, password, orderdetail_id, star, content):
     json = {
         "user_id": buyer_id,
@@ -107,6 +106,7 @@ def add_comment(buyer_id, password, orderdetail_id, star, content):
     r = requests.post(url, headers=headers, json=json)
     return r.status_code
 
+
 def update_comment(buyer_id, password, orderdetail_id, content):
     json = {
         "user_id": buyer_id,
@@ -121,6 +121,7 @@ def update_comment(buyer_id, password, orderdetail_id, content):
     r = requests.post(url, headers=headers, json=json)
     return r.status_code
 
+
 def search_book_site(buyer_id, password, key_word):
     json = {
         "user_id": buyer_id,
@@ -132,4 +133,14 @@ def search_book_site(buyer_id, password, key_word):
     code, token = auth.login(buyer_id, password, terminal)
     headers = {"token": token}
     r = requests.post(url, headers=headers, json=json)
+    return r.status_code
+
+
+def get_comment_by_book_id(store_id, book_id):
+    json = {
+        "store_id": store_id,
+        "book_id": book_id,
+    }
+    url = 'http://127.0.0.1:5000/buyer/get_comment_by_book_id'
+    r = requests.post(url, json=json)
     return r.status_code

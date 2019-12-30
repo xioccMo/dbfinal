@@ -317,6 +317,33 @@ def update_comment():
     return jsonify({"message": "ok"}), 200
 
 
+@buyer_bp.route("/get_comment_by_book_id", methods=["POST"])
+def get_comment_by_book_id():
+    store_id = request.json.get("store_id")
+    book_id = request.json.get("book_id")
+
+    store = Store.query.filter_by(store_id=store_id).first()
+    if store is None:
+        return jsonify({"message": "商店不存在"}), 501
+
+    book = Book.query.filter_by(book_id=store_id + "|" + book_id).first()
+
+    if book is None:
+        return jsonify({"message": "该图书不存在"}), 502
+    orderdetails = Orderdetail.query.filter_by(book_id=book_id).order_by(Orderdetail.createtime.desc()).limit(500).all()
+    json = {
+          "comment": []
+    }
+    for orderdetail in orderdetails:
+        json["comment"].append({
+            "createtime": orderdetail.createtime,
+            "buyer_id": orderdetail.buyer_id,
+            "star":  orderdetail.star,
+            "content": orderdetail.content,
+        })
+    return jsonify(json), 200
+
+
 @buyer_bp.route("/search_book_store", methods=["POST"])
 def search_book_store():
     token = jwtDecoding(request.headers.get("token"))
