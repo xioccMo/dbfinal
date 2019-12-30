@@ -3,14 +3,19 @@
     <words>
       <w>accomplishorders</w>
       <w>createtime</w>
+      <w>foruncommentorder</w>
+      <w>forunpaidorder</w>
       <w>gtmddatabase</w>
+      <w>orderdeatail</w>
       <w>orderdetail</w>
       <w>orderdetails</w>
       <w>orderitem</w>
       <w>pendingorder</w>
+      <w>pytest</w>
       <w>tablename</w>
       <w>unaccomplishdorder</w>
       <w>unaccomplishdorders</w>
+      <w>unconfigure</w>
       <w>unpay</w>
       <w>xukun</w>
     </words>

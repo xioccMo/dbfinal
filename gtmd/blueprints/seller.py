@@ -133,7 +133,7 @@ def change_unreceived():
     if user is None:
         return jsonify({"message": "卖家用户ID不存在"}), 501
     if token is None or token.json.get("user_id") != seller_id:
-        return jsonify({"message": "添加失败，用户名或token错误"}), 502
+        return jsonify({"message": "修改状态失败，用户名或token错误"}), 502
     store = Store.query.filter_by(seller_id=seller_id, store_id=store_id).first()
     if store is None:
         return jsonify({"message": "商铺ID不存在"}), 503
@@ -145,3 +145,4 @@ def change_unreceived():
     order.status = "unreceived"
     db.session.commit()
     return jsonify({"message": "ok"}), 200
+

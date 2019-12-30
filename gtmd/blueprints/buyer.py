@@ -10,7 +10,8 @@ from gtmd.models.Order import Order
 from gtmd.models.Orderdetail import Orderdetail
 from gtmd.models.Store import Store
 from gtmd.models.User import User
-from gtmd.models.PendingOrder import Pendingorder
+from gtmd.models.Forunpaidorder import Forunpaidorder
+from gtmd.models.Foruncommentorder import Foruncommentorder
 from gtmd.tokenMethods import *
 
 buyer_bp = Blueprint("buyer", __name__, url_prefix="/buyer")
@@ -63,8 +64,8 @@ def new_order():
         orderdetail = Orderdetail(orderdetail_id=str(uuid.uuid1()), order_id=order_id, book_id=store_id + "|" + book_id,
                                   count=count, price=book.price)
         db.session.add(orderdetail)
-    pendingorder = Pendingorder(order_id=order_id)
-    db.session.add(pendingorder)
+    forunpaidorder = Forunpaidorder(order_id=order_id)
+    db.session.add(forunpaidorder)
     db.session.commit()
     return jsonify({"order_id": order_id}), 200
 
@@ -142,6 +143,7 @@ def change_received():
     elif order.status != "unreceived":
         return jsonify({"message": "当前订单物品状态不为待发货，无法切换为收货状态"}), 504
     order.status = "received"
+    db.session.add(Foruncommentorder(order_id=order_id))
     db.session.commit()
     return jsonify({"message": "ok"}), 200
 
@@ -196,6 +198,7 @@ def track_order_by_order_id():
     for item in items:
         order_info["orderdetail"].append(
             {
+                "orderdetail_id": item.orderdetail_id,
                 "book_id": item.book_id,
                 "book_title": item.book_info.title,
                 "book_author": item.book_info.author,
@@ -238,6 +241,7 @@ def track_order():
         for orderdetail in order.orderdetail:
             order_info["orderdetail"].append(
                 {
+                    "orderdetail_id": orderdetail.orderdetail_id,
                     "book_id": orderdetail.book_id,
                     "book_title": orderdetail.book_info.title,
                     "count": orderdetail.count,
@@ -250,36 +254,56 @@ def track_order():
     return jsonify(json), 200
 
 
-@buyer_bp.route("/add_comment", methods=["GET"])
+@buyer_bp.route("/add_comment", methods=["POST"])
 def add_comment():
     token = jwtDecoding(request.headers.get("token"))
     buyer_id = request.json.get("user_id")
-    store_id = request.json.get("store_id")
-    book_id = request.json.get("book_id")
-
-    order_id = request.json.get("order_id")
     orderdetail_id = request.json.get("orderdetail_id")
     star = request.json.get("star")
-    comment = request.json.get("comment")
-
-    if star == "" or comment == "":
-        return jsonify({"message": "评分或评论为空"}), 506
+    content = request.json.get("content")
+    if star <= 0 or star > 5:
+        return jsonify({"message": "评分参数错误"}), 506
+    if content == "":
+        return jsonify({"message": "评论不能为空"}), 507
     user = User.query.filter_by(user_id=buyer_id).first()
     if user is None:
-        return jsonify({"message": "买家用户ID不存在"}), 501
+        return jsonify({"message": "买家用户不存在"}), 501
     if token is None or buyer_id != token.json.get("user_id"):
         return jsonify({"message": "用户名或token错误"}), 502
-    order = Order.query.filter_by(buyer_id=buyer_id, order_id=order_id).first()
-    if order is None:
-        return jsonify({"message": "当前用户没有该订单或订单不存在"}), 503
-    if order.status != "received":
-        return jsonify({"message": "当前书籍未收货，无法评论对该书籍进行评论"})
-    orderdetail = Orderdetail.query.filter_by(orderdetail_id=store_id + book_id).first()
+    orderdetail = Orderdetail.query.filter_by(orderdetail_id=orderdetail_id).first()
     if orderdetail is None:
-        return jsonify({"message": "订单号错误或该商品不存在"}), 504
-    if orderdetail.star != 0 or orderdetail.comment != "":
-        return jsonify({"message": "当前商品已经给过评价"}), 505
+        return jsonify({"message": "订单物品出错，请重试"}), 503
+    elif orderdetail.order_info.status != "received":
+        return jsonify({"message": "该物品对应订单还未收货，无法评价"}), 504
+    elif orderdetail.status == "commented":
+        return jsonify({"message": "该物品已被评论，评论失败"}), 505
+
+    orderdetail.status = "commented"
+    orderdetail.createtime = datetime.datetime.now()
     orderdetail.star = star
-    orderdetail.comment = comment
+    orderdetail.content = content
+    db.session.commit()
+    return jsonify({"message": "ok"}), 200
+
+
+@buyer_bp.route("/update_comment", methods=["POST"])
+def update_comment():
+    token = jwtDecoding(request.headers.get("token"))
+    buyer_id = request.json.get("user_id")
+    orderdetail_id = request.json.get("orderdetail_id")
+    content = request.json.get("content")
+    if content == "":
+        return jsonify({"message": "评论不能为空"}), 505
+    user = User.query.filter_by(user_id=buyer_id).first()
+    if user is None:
+        return jsonify({"message": "买家用户不存在"}), 501
+    if token is None or buyer_id != token.json.get("user_id"):
+        return jsonify({"message": "用户名或token错误"}), 502
+    orderdetail = Orderdetail.query.filter_by(orderdetail_id=orderdetail_id).first()
+    if orderdetail is None:
+        return jsonify({"message": "订单物品出错，请重试"}), 503
+    elif orderdetail.status != "commented":
+        return jsonify({"message": "该物品未被评论，评论无法更新"}), 504
+    orderdetail.content = content
     db.session.commit()
     return jsonify({"message": "ok"}), 200

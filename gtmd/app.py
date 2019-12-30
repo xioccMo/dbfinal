@@ -23,9 +23,3 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(shutdown_bp)
 app.register_blueprint(buyer_bp)
 app.register_blueprint(seller_bp)
-
-import gtmd.monitor
-
-
-if __name__ == '__main__':
-    app.run()
