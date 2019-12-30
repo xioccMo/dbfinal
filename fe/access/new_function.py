@@ -31,6 +31,7 @@ def change_received(buyer_id, password, order_id):
     return r.status_code
 
 
+# 取消订单
 def cancel_order(buyer_id, password, order_id):
     json = {
         "user_id": buyer_id,
@@ -45,6 +46,7 @@ def cancel_order(buyer_id, password, order_id):
     return r.status_code
 
 
+# 用户查看自己的历史订单
 def track_order_by_order_id(buyer_id, password, order_id):
     json = {
         "user_id": buyer_id,
@@ -59,6 +61,8 @@ def track_order_by_order_id(buyer_id, password, order_id):
     return r.status_code, r.json().get("orderdetail")
 
 
+
+# 追踪订单
 def track_order(buyer_id, password):
     json = {
         "user_id": buyer_id,
@@ -71,6 +75,22 @@ def track_order(buyer_id, password):
     r = requests.post(url, headers=headers, json=json)
     return r.status_code
 
+
+
+def search_book_store(buyer_id, password, store_id, key_word):
+    json = {
+        "user_id": buyer_id,
+        "store_id": store_id,
+        "key_word": key_word
+    }
+    terminal = "test"
+    url = "http://127.0.0.1:5000/buyer/search_book_store"
+
+    auth = Auth("http://127.0.0.1:5000")
+    code, token = auth.login(buyer_id, password, terminal)
+    headers = {"token": token}
+    r = requests.post(url, headers=headers, json=json)
+    return r.status_code
 
 def add_comment(buyer_id, password, orderdetail_id, star, content):
     json = {
@@ -87,7 +107,6 @@ def add_comment(buyer_id, password, orderdetail_id, star, content):
     r = requests.post(url, headers=headers, json=json)
     return r.status_code
 
-
 def update_comment(buyer_id, password, orderdetail_id, content):
     json = {
         "user_id": buyer_id,
@@ -96,6 +115,19 @@ def update_comment(buyer_id, password, orderdetail_id, content):
     }
     terminal = "CaiXukun"
     url = "http://127.0.0.1:5000/buyer/update_comment"
+    auth = Auth("http://127.0.0.1:5000")
+    code, token = auth.login(buyer_id, password, terminal)
+    headers = {"token": token}
+    r = requests.post(url, headers=headers, json=json)
+    return r.status_code
+
+def search_book_site(buyer_id, password, key_word):
+    json = {
+        "user_id": buyer_id,
+        "key_word": key_word
+    }
+    terminal = "CaiXukun"
+    url = "http://127.0.0.1:5000/buyer/search_book_site"
     auth = Auth("http://127.0.0.1:5000")
     code, token = auth.login(buyer_id, password, terminal)
     headers = {"token": token}

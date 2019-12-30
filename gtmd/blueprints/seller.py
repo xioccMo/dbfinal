@@ -8,9 +8,12 @@ from gtmd.models.Store import Store
 from gtmd.models.User import User
 from gtmd.tokenMethods import *
 import json
+
 seller_bp = Blueprint("seller", __name__, url_prefix="/seller")
+# 卖家用户接口
 
 
+# 创建店铺
 @seller_bp.route("/create_store", methods=["GET", "POST"])
 def create_store():
     """
@@ -34,6 +37,7 @@ def create_store():
         return jsonify({"message": "商铺ID已存在"}), 501
 
 
+# 填加书籍信息及描述
 @seller_bp.route("/add_book", methods=["GET", "POST"])
 def add_book():
     """
@@ -90,6 +94,7 @@ def add_book():
         return jsonify({"message": "图书ID已存在"}), 504
 
 
+# 增加库存
 @seller_bp.route("add_stock_level", methods=["GET", "POST"])
 def update_stock_level():
     """

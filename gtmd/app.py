@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 from gtmd import config
 import multiprocessing
+
 app = Flask("dataBaseFinalProject")
 
 app.config.from_object(config)
@@ -23,3 +24,4 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(shutdown_bp)
 app.register_blueprint(buyer_bp)
 app.register_blueprint(seller_bp)
+

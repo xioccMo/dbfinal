@@ -2,7 +2,6 @@ import os
 import sqlite3 as sqlite
 import random
 import base64
-import simplejson as json
 
 
 class Book:

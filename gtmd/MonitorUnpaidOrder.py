@@ -36,7 +36,6 @@ def unpaidMonitor():
 
     # 创建DBSession类型:
     DBSession = sessionmaker(bind=engine)
-
     while True:
         session = DBSession()
         forunpaidorder = session.query(Forunpaidorder).order_by(Forunpaidorder.id).first()
