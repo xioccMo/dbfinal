@@ -4,7 +4,9 @@
       <w>accomplishorders</w>
       <w>createtime</w>
       <w>foruncommentorder</w>
+      <w>foruncommentorderdetail</w>
       <w>forunpaidorder</w>
+      <w>forunpaidorderdetail</w>
       <w>gtmddatabase</w>
       <w>mysqlconnector</w>
       <w>orderdeatail</w>
@@ -13,6 +15,7 @@
       <w>orderitem</w>
       <w>pendingorder</w>
       <w>pytest</w>
+      <w>receivedtime</w>
       <w>tablename</w>
       <w>unaccomplishdorder</w>
       <w>unaccomplishdorders</w>

@@ -1,4 +1,5 @@
 from fe.bench.workload import Workload
+from fe.bench.workload import NewOrder
 from fe.bench.workload import Payment
 import time
 import threading
@@ -32,13 +33,13 @@ class Session(threading.Thread):
             before = time.time()
             ok, order_id = new_order.run()
             after = time.time()
-            self.time_new_order = self.time_new_order + after - before
+            self.time_new_order = self.time_new_order + after - before  # 前后时间
             self.new_order_i = self.new_order_i + 1
-            if ok:
+            if ok: # 如果订单请求ok，则发送付款请求
                 self.new_order_ok = self.new_order_ok + 1
                 payment = Payment(new_order.buyer, order_id)
                 self.payment_request.append(payment)
-            if self.new_order_i % 100 or self.new_order_i == len(self.new_order_request):
+            if self.new_order_i % 100 or self.new_order_i == len(self.new_order_request):# d order_i不整除100 或 新的单数 不等于 新的单数请求
                 self.workload.update_stat(self.new_order_i, self.payment_i, self.new_order_ok, self.payment_ok,
                                           self.time_new_order, self.time_payment)
                 for payment in self.payment_request:

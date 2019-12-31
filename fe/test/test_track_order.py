@@ -10,7 +10,7 @@ class TestTrackOrder:
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
 
-        self.buyer_id = "test_change_status_to_unreceived_buyer_id_{}".format(str(uuid.uuid1()))
+        self.buyer_id = "test_track_order_buyer_id_{}".format(str(uuid.uuid1()))
         # 创建用户
         self.buyer_password = self.buyer_id
         self.buyer = register_new_buyer(self.buyer_id, self.buyer_password)

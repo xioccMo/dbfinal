@@ -2,10 +2,19 @@
 <project version="4">
   <component name="DataSourceManagerImpl" format="xml" multifile-model="true">
     <data-source source="LOCAL" name="gtmddatabase@localhost" uuid="e2a1ebc1-4df6-46f7-9f58-ce8ed3d782c7">
-      <driver-ref>mysql.8</driver-ref>
+      <driver-ref>mysql</driver-ref>
       <synchronize>true</synchronize>
       <jdbc-driver>com.mysql.jdbc.Driver</jdbc-driver>
       <jdbc-url>jdbc:mysql://localhost:3306/gtmddatabase</jdbc-url>
+    </data-source>
+    <data-source source="LOCAL" name="book" uuid="a7afba35-631b-4cd9-bf92-d01d50073916">
+      <driver-ref>sqlite.xerial</driver-ref>
+      <synchronize>true</synchronize>
+      <jdbc-driver>org.sqlite.JDBC</jdbc-driver>
+      <jdbc-url>jdbc:sqlite:C:\Users\Momoo\Desktop\GTMD\fe\data\book.db</jdbc-url>
+      <driver-properties>
+        <property name="enable_load_extension" value="true" />
+      </driver-properties>
     </data-source>
   </component>
 </project>

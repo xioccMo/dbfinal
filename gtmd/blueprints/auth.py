@@ -76,12 +76,6 @@ def unregister():
 # 修改密码
 @auth_bp.route('/password', methods=['GET', 'POST'])
 def password():
-    """
-    Response
-    Status Code || Message || Judging Condition:
-    401 更改密码失败  通过user_id 和 password查询User表，返回的查询结果为空
-    200 ok
-    """
     user_id = request.json.get("user_id")
     oldPassword = request.json.get("oldPassword")
     newPassword = request.json.get("newPassword")
@@ -95,12 +89,6 @@ def password():
 # 登出
 @auth_bp.route('/logout', methods=['GET', 'POST'])
 def logout():
-    """
-    Response
-    Status Code || Message || Judging Condition:
-    401 登出失败，用户名或token错误  token解析返回值为空（即token解析错误）或token解析成json格式后user对应的值与user_id不符
-    200 ok
-    """
     user_id = request.json.get("user_id")
     token = jwtDecoding(request.headers.get("token"))
     if token is None or token.json.get("user_id") != user_id:

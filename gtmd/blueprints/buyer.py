@@ -1,6 +1,4 @@
-import base64
 import datetime
-import random
 import uuid
 
 import sqlalchemy
@@ -15,7 +13,7 @@ from gtmd.models.Orderdetail import Orderdetail
 from gtmd.models.Store import Store
 from gtmd.models.User import User
 from gtmd.models.Forunpaidorder import Forunpaidorder
-from gtmd.models.Foruncommentorder import Foruncommentorder
+from gtmd.models.Foruncommentorderdetail import Foruncommentorderdetail
 
 from gtmd.tokenMethods import *
 
@@ -38,11 +36,12 @@ def new_order():
     2、由于外键限制，在创建订单详细的元祖之前，得先在表Order中创建属性order_id为order_id的订单项
     3、当遇到503和504错误，得先用session.rollback进行回滚，再删除之前创建的订单项然后返回
     """
-    token = jwtDecoding(request.headers.get("token"))  # token: 标记
+      # token: 标记
     buyer_id = request.json.get("user_id")
     user = User.query.filter_by(user_id=buyer_id).first()  # FIRST() 函数返回指定的列中第一个记录的值 user_id
     if user is None:
         return jsonify({"message": "买家用户ID不存在"}), 501
+    token = jwtDecoding(request.headers.get("token"))
     if token is None or buyer_id != token.json.get("user_id"):
         return jsonify({"message": "用户名或token错误"}), 502
     store_id = request.json.get("store_id")
@@ -94,11 +93,10 @@ def payment():
     order = Order.query.filter_by(order_id=order_id).first()
     if order is None:
         return jsonify({"message": "无效参数"}), 501
-    elif order.status != "unpaid" or (datetime.datetime.now() - order.createtime).total_seconds() >= 10:
+    elif order.status != "unpaid":
         return jsonify({"message": "当前订单状态无法支付"}), 502
-    orderdetails = Orderdetail.query.filter_by(order_id=order_id).all()
     total = 0
-    for orderdetail in orderdetails:
+    for orderdetail in order.orderdetail:
         total += orderdetail.price * orderdetail.count
     # 这里需要修改说明
     if total > user.value:
@@ -150,8 +148,9 @@ def change_received():
 
     order.status = "received"
     for orderdetail in order.orderdetail:
-        orderdetail.book_info.sales + orderdetail.count
-    db.session.add(Foruncommentorder(order_id=order_id))
+        orderdetail.book_info.sales += orderdetail.count
+        orderdetail.receivedtime = datetime.datetime.now()
+        db.session.add(Foruncommentorderdetail(orderdetail_id=orderdetail.orderdetail_id))
     db.session.commit()
     return jsonify({"message": "ok"}), 200
 
@@ -289,29 +288,6 @@ def add_comment():
     orderdetail.status = "commented"
     orderdetail.createtime = datetime.datetime.now()
     orderdetail.star = star
-    orderdetail.content = content
-    db.session.commit()
-    return jsonify({"message": "ok"}), 200
-
-
-@buyer_bp.route("/update_comment", methods=["POST"])
-def update_comment():
-    token = jwtDecoding(request.headers.get("token"))
-    buyer_id = request.json.get("user_id")
-    orderdetail_id = request.json.get("orderdetail_id")
-    content = request.json.get("content")
-    if content == "":
-        return jsonify({"message": "评论不能为空"}), 505
-    user = User.query.filter_by(user_id=buyer_id).first()
-    if user is None:
-        return jsonify({"message": "买家用户不存在"}), 501
-    if token is None or buyer_id != token.json.get("user_id"):
-        return jsonify({"message": "用户名或token错误"}), 502
-    orderdetail = Orderdetail.query.filter_by(orderdetail_id=orderdetail_id).first()
-    if orderdetail is None:
-        return jsonify({"message": "订单物品出错，请重试"}), 503
-    elif orderdetail.status != "commented":
-        return jsonify({"message": "该物品未被评论，评论无法更新"}), 504
     orderdetail.content = content
     db.session.commit()
     return jsonify({"message": "ok"}), 200

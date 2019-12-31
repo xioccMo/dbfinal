@@ -9,9 +9,9 @@ from fe.test.gen_book_data import GenBook
 class TestTrackOrderByOrderId:
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
-        self.seller_id = "test_change_status_to_unreceived_seller_id_{}".format(str(uuid.uuid1()))
-        self.store_id = "test_change_status_to_unreceived_store_id_{}".format(str(uuid.uuid1()))
-        self.buyer_id = "test_change_status_to_unreceived_buyer_id_{}".format(str(uuid.uuid1()))
+        self.seller_id = "test_track_order_by_order_id_seller_id_{}".format(str(uuid.uuid1()))
+        self.store_id = "test_track_order_by_order_id_store_id_{}".format(str(uuid.uuid1()))
+        self.buyer_id = "test_track_order_by_order_id_buyer_id_{}".format(str(uuid.uuid1()))
         self.seller_password = self.seller_id
         self.buyer_password = self.buyer_id
 

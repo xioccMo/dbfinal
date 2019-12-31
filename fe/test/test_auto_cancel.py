@@ -7,7 +7,7 @@ import uuid
 from fe.test.gen_book_data import GenBook
 
 
-class TestCancelOrder:
+class TestAutoCancelOrder:
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
         self.seller_id = "test_change_received_seller_id_{}".format(str(uuid.uuid1()))

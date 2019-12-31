@@ -9,9 +9,9 @@ from fe.test.gen_book_data import GenBook
 class TestCancelOrder:
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
-        self.seller_id = "test_change_received_seller_id_{}".format(str(uuid.uuid1()))
-        self.store_id = "test_change_received_store_id_{}".format(str(uuid.uuid1()))
-        self.buyer_id = "test_change_received_buyer_id_{}".format(str(uuid.uuid1()))
+        self.seller_id = "test_cancel_order_seller_id_{}".format(str(uuid.uuid1()))
+        self.store_id = "test_cancel_order_store_id_{}".format(str(uuid.uuid1()))
+        self.buyer_id = "test_cancel_order_buyer_id_{}".format(str(uuid.uuid1()))
         self.seller_password = self.seller_id
         self.buyer_password = self.buyer_id
 

@@ -14,6 +14,8 @@ class Orderdetail(db.Model):
     price = db.Column(db.Integer, nullable=False)
     # 商品状态
     status = db.Column(db.String, default="uncommented", nullable=False)
+    # 收货时间
+    receivedtime = db.Column(db.DATETIME, nullable=True)
     # 评论时间
     createtime = db.Column(db.DATETIME, nullable=True)
     # 评论分数

@@ -34,6 +34,7 @@ def create_store():
         db.session.commit()
         return jsonify(({"message": "创建商铺成功"})), 200
     except exc.IntegrityError:
+        db.session.rollback()
         return jsonify({"message": "商铺ID已存在"}), 501
 
 
@@ -52,46 +53,52 @@ def add_book():
     这里tags是用空格作为分隔符存储为字符串保存的
     这里Blob是用mediumblob类型，存储方法在Book.py里面有两种方法说明
     """
-    token = jwtDecoding(request.headers.get("token"))
-    seller_id = request.json.get("user_id")
-    store_id = request.json.get("store_id")
-    book_info = request.json.get("book_info")
-    stock_level = request.json.get("stock_level")
-    user = User.query.filter_by(user_id=seller_id).first()
-    if user is None:
-        return jsonify({"message": "卖家用户ID不存在"}), 501
-    if token is None or token.json.get("user_id") != seller_id:
-        return jsonify({"message": "添加失败，用户名或token错误"}), 502
-    store = Store.query.filter_by(seller_id=seller_id, store_id=store_id).first()
-    if store is None:
-        return jsonify({"message": "商铺ID不存在"}), 503
-    book = Book(
-        # 这里做一点冗余处理，主要实现不同店铺可以加相同id的商品，而同一个店铺不行，否则测试过不了
-        book_id=store_id + "|" + book_info["id"],
-        store_id=store_id,
-        title=book_info["title"],
-        author=book_info["author"],
-        publisher=book_info["publisher"],
-        original_title=book_info["original_title"],
-        translator=book_info["translator"],
-        pub_year=book_info["pub_year"],
-        pages=book_info["pages"],
-        price=book_info["price"],
-        binding=book_info["binding"],
-        isbn=book_info["isbn"],
-        author_intro=book_info["author_intro"],
-        book_intro=book_info["book_intro"],
-        content=book_info["content"],
-        tags=" ".join(book_info["tags"]),
-        pictures=json.dumps("".join(book_info["pictures"])).encode('utf-8'),
-        stock_level=stock_level
-    )
-    db.session.add(book)
-    try:
-        db.session.commit()
-        return jsonify({"message": "ok"}), 200
-    except exc.IntegrityError:
-        return jsonify({"message": "图书ID已存在"}), 504
+    while True:
+        try:
+            token = jwtDecoding(request.headers.get("token"))
+            seller_id = request.json.get("user_id")
+            store_id = request.json.get("store_id")
+            book_info = request.json.get("book_info")
+            stock_level = request.json.get("stock_level")
+            user = User.query.filter_by(user_id=seller_id).first()
+            if user is None:
+                return jsonify({"message": "卖家用户ID不存在"}), 501
+            if token is None or token.json.get("user_id") != seller_id:
+                return jsonify({"message": "添加失败，用户名或token错误"}), 502
+            store = Store.query.filter_by(seller_id=seller_id, store_id=store_id).first()
+            if store is None:
+                return jsonify({"message": "商铺ID不存在"}), 503
+            book = Book(
+                # 这里做一点冗余处理，主要实现不同店铺可以加相同id的商品，而同一个店铺不行，否则测试过不了
+                book_id=store_id + "|" + book_info["id"],
+                store_id=store_id,
+                title=book_info["title"],
+                author=book_info["author"],
+                publisher=book_info["publisher"],
+                original_title=book_info["original_title"],
+                translator=book_info["translator"],
+                pub_year=book_info["pub_year"],
+                pages=book_info["pages"],
+                price=book_info["price"],
+                binding=book_info["binding"],
+                isbn=book_info["isbn"],
+                author_intro=book_info["author_intro"],
+                book_intro=book_info["book_intro"],
+                content=book_info["content"],
+                tags=" ".join(book_info["tags"]),
+                pictures=json.dumps("".join(book_info["pictures"])).encode('utf-8'),
+                stock_level=stock_level
+            )
+            db.session.add(book)
+            try:
+                db.session.commit()
+                return jsonify({"message": "ok"}), 200
+            except exc.IntegrityError:
+                db.session.rollback()
+                return jsonify({"message": "图书ID已存在"}), 504
+        except exc.OperationalError:
+            db.session.rollback()
+            return jsonify({"message": "添加错误"}), 505
 
 
 # 增加库存

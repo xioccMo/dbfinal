@@ -2,13 +2,15 @@ from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
 from gtmd import config
-import multiprocessing
+# from gtmd.monitor import Monitor
 
 app = Flask("dataBaseFinalProject")
 
 app.config.from_object(config)
 db = SQLAlchemy(app)
 app.config["SECRET_KEY"] = "12345678"
+
+# Monitor.MonitorStart()
 
 # 因为变量db对应的对象SQLAlchemy在前面创建且下列Blueprints都要导入变量db，所以这些Blueprint对象要在SQlAlchemy创建之后再导入
 from gtmd.blueprints.auth import auth_bp
@@ -24,4 +26,5 @@ app.register_blueprint(auth_bp)
 app.register_blueprint(shutdown_bp)
 app.register_blueprint(buyer_bp)
 app.register_blueprint(seller_bp)
+
 
